@@ -4,11 +4,11 @@
 sudo apt update -y
 
 # Install Java
-sudo apt install -y openjdk-21-jdk wget curl
+sudo apt install -y openjdk-25-jdk wget curl
 
 # Download and install Jenkins directly (most reliable method)
-wget https://get.jenkins.io/debian-stable/jenkins_2.541.1_all.deb
-sudo dpkg -i jenkins_2.541.1_all.deb
+wget https://get.jenkins.io/debian-stable/jenkins_2.555.2_all.deb
+sudo dpkg -i jenkins_2.555.2_all.deb
 sudo apt-get install -f -y
 
 # Start Jenkins
