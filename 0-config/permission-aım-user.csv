@@ -1,0 +1,11 @@
+Policy Name
+AdministratorAccess
+AmazonEC2FullAccess
+AmazonVPCFullAccess
+AmazonEKSFullAccess
+AmazonEKSClusterPolicy
+AmazonS3FullAccess
+IAMFullAccess
+ElasticLoadBalancingFullAccess
+AdministratorAccess
+CloudWatchLogsFullAccess
