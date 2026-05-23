@@ -13,7 +13,7 @@ pipeline {
         DOCKER_IMAGE_NAME           = 'alimafunzo/easyshop-app'
         DOCKER_MIGRATION_IMAGE_NAME = 'alimafunzo/easyshop-migration'
         DOCKER_IMAGE_TAG            = "${BUILD_NUMBER}"
-        APP_GIT_BRANCH              = 'master'   // renamed to avoid shadowing Jenkins built-in
+        APP_GIT_BRANCH              = 'main'   // renamed to avoid shadowing Jenkins built-in
     }
 
     stages {
