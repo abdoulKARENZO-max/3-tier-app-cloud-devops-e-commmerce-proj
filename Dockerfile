@@ -1,41 +1,60 @@
-# Stage 1: Development/Build Stage
-FROM node:24-alpine AS builder
-
-# Set working directory
+# Stage 1: Dependencies (cached layer - rarely changes)
+FROM node:24-alpine AS deps
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install necessary build dependencies
+# Copy package files first (changes rarely)
+COPY package.json package-lock.json* yarn.lock* ./
+RUN \
+  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci --only=production --prefer-offline; \
+  else npm install --production; \
+  fi
+
+# Stage 2: Builder (changes when source code changes)
+FROM node:24-alpine AS builder
+WORKDIR /app
+
+# Install build dependencies
 RUN apk add --no-cache python3 make g++
 
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci
-
-# Copy all project files
+# Copy node_modules from deps stage
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build the Next.js application
+# Set environment variables
+ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+
+# Build the application
 RUN npm run build
 
-# Stage 2: Production Stage
+# Stage 3: Production Runner (final image)
 FROM node:24-alpine AS runner
-
-# Set working directory
 WORKDIR /app
 
-# Copy necessary files from builder stage
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED 1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy necessary files
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
 
-# Set environment variables
-ENV NODE_ENV=production
-ENV PORT=3000
+# Optional: Copy config files if needed
+COPY --from=builder /app/next.config.js ./ 2>/dev/null || true
 
-# Expose the port the app runs on
+# Set correct ownership
+RUN chown -R nextjs:nodejs /app
+
+USER nextjs
+
 EXPOSE 3000
 
-# Command to run the application
 CMD ["node", "server.js"]

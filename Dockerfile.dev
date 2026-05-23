@@ -1,40 +1,33 @@
-FROM node:24-alpine AS builder
-
+# Development Dockerfile - Optimized for fast rebuilds
+FROM node:24-alpine AS dev-deps
 WORKDIR /app
 
-# Install build dependencies
-RUN apk add --no-cache python3 make g++
+# Copy only package files first
+COPY package.json package-lock.json* yarn.lock* ./
 
-# Copy package files
-COPY package*.json ./
-RUN npm ci
+# Install all dependencies (including dev dependencies)
+RUN \
+  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci --prefer-offline; \
+  else npm install; \
+  fi
 
-# Copy source code
+# Development stage
+FROM node:24-alpine AS dev
+WORKDIR /app
+
+# Install nodemon for hot reload
+RUN npm install -g nodemon
+
+# Copy dependencies from previous stage
+COPY --from=dev-deps /app/node_modules ./node_modules
 COPY . .
 
-# Set environment variable to skip telemetry
+ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED 1
-
-# Build the application
 ENV NEXT_PUBLIC_API_URL=http://localhost:3000/api
-RUN npm run build
-
-# Production image
-FROM node:24-alpine AS runner
-WORKDIR /app
-
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-
-# Copy necessary files from builder
-COPY --from=builder /app/next.config.js ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-
-CMD ["node", "server.js"]
+# Use nodemon for auto-restart on file changes
+CMD ["nodemon", "--watch", ".", "--ext", "js,jsx,ts,tsx,json", "--exec", "npm run dev"]
