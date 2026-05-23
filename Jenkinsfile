@@ -29,7 +29,7 @@ pipeline {
             steps {
                 script {
                     clone(
-                        "https://github.com/lax66/tws-e-commerce-app_hackathon.git",
+                        "https://github.com/abdoulKARENZO-max/3-tier-app-cloud-devops-e-commmerce-proj.git",
                         env.APP_GIT_BRANCH
                     )
                 }
@@ -118,7 +118,7 @@ pipeline {
                         manifestsPath:  'kubernetes',
                         gitCredentials: 'github-credentials',
                         gitUserName:    'Jenkins CI',
-                        gitUserEmail:   'misc.lucky66@gmail.com'
+                        gitUserEmail:   'mafunzoali@gmail.com'
                     )
                 }
             }
