@@ -2,138 +2,153 @@
 
 pipeline {
     agent any
-
+    
     options {
-        timeout(time: 30, unit: 'MINUTES')
-        buildDiscarder(logRotator(numToKeepStr: '10'))
-        disableConcurrentBuilds()
+        parallelsAlwaysFailFast()  // Global failFast for ALL parallel stages
+        timeout(time: 1, unit: 'HOURS')  // Additional safety - max pipeline runtime
+        buildDiscarder(logRotator(numToKeepStr: '10'))  // Keep last 10 builds only
     }
-
+    
     environment {
-        DOCKER_IMAGE_NAME           = 'alimafunzo/easyshop-app'
+        // Your Docker Hub username
+        DOCKER_IMAGE_NAME = 'alimafunzo/easyshop-app'
         DOCKER_MIGRATION_IMAGE_NAME = 'alimafunzo/easyshop-migration'
-        DOCKER_IMAGE_TAG            = "${BUILD_NUMBER}"
-        APP_GIT_BRANCH              = 'main'   // renamed to avoid shadowing Jenkins built-in
+        DOCKER_IMAGE_TAG = "${BUILD_NUMBER}"
+        GITHUB_CREDENTIALS = credentials('github-credentials')
+        GIT_BRANCH = "main"
+        REPO_URL = "https://github.com/abdoulKARENZO-max/3-tier-app-cloud-devops-e-commmerce-proj.git"
     }
-
+    
     stages {
         stage('Cleanup Workspace') {
-            steps {
-                script {
-                    clean_ws()
+            steps { 
+                script { 
+                    clean_ws() 
                 }
             }
         }
-
+        
         stage('Clone Repository') {
             steps {
                 script {
-                    clone(
-                        "https://github.com/abdoulKARENZO-max/3-tier-app-cloud-devops-e-commmerce-proj.git",
-                        env.APP_GIT_BRANCH
-                    )
+                    clone(env.REPO_URL, env.GIT_BRANCH)
                 }
             }
         }
-
+        
         stage('Build Docker Images') {
             parallel {
-                failFast true
                 stage('Build Main App Image') {
                     steps {
                         script {
                             docker_build(
-                                imageName:  env.DOCKER_IMAGE_NAME,
-                                imageTag:   env.DOCKER_IMAGE_TAG,
+                                imageName: env.DOCKER_IMAGE_NAME,
+                                imageTag: env.DOCKER_IMAGE_TAG,
                                 dockerfile: 'Dockerfile',
-                                context:    '.'
+                                context: '.'
                             )
                         }
                     }
                 }
+                
                 stage('Build Migration Image') {
                     steps {
                         script {
                             docker_build(
-                                imageName:  env.DOCKER_MIGRATION_IMAGE_NAME,
-                                imageTag:   env.DOCKER_IMAGE_TAG,
+                                imageName: env.DOCKER_MIGRATION_IMAGE_NAME,
+                                imageTag: env.DOCKER_IMAGE_TAG,
                                 dockerfile: 'scripts/Dockerfile.migration',
-                                context:    '.'
+                                context: '.'
                             )
                         }
                     }
                 }
             }
+            // No need for individual failFast - handled globally
         }
-
+        
         stage('Run Unit Tests') {
-            steps {
-                script {
-                    run_tests()
+            steps { 
+                script { 
+                    run_tests() 
                 }
             }
         }
-
+        
         stage('Security Scan with Trivy') {
-            steps {
-                script {
-                    trivy_scan()
+            steps { 
+                script { 
+                    trivy_scan() 
                 }
             }
         }
-
+        
         stage('Push Docker Images') {
             parallel {
-                failFast true
                 stage('Push Main App Image') {
                     steps {
                         script {
                             docker_push(
-                                imageName:   env.DOCKER_IMAGE_NAME,
-                                imageTag:    env.DOCKER_IMAGE_TAG,
-                                credentials: 'docker-hub-credentials'
+                                imageName: env.DOCKER_IMAGE_NAME,
+                                imageTag: env.DOCKER_IMAGE_TAG,
+                                credentialsId: 'docker-hub-credentials'
                             )
                         }
                     }
                 }
+                
                 stage('Push Migration Image') {
                     steps {
                         script {
                             docker_push(
-                                imageName:   env.DOCKER_MIGRATION_IMAGE_NAME,
-                                imageTag:    env.DOCKER_IMAGE_TAG,
-                                credentials: 'docker-hub-credentials'
+                                imageName: env.DOCKER_MIGRATION_IMAGE_NAME,
+                                imageTag: env.DOCKER_IMAGE_TAG,
+                                credentialsId: 'docker-hub-credentials'
                             )
                         }
                     }
                 }
             }
+            // No need for individual failFast - handled globally
         }
-
+        
         stage('Update Kubernetes Manifests') {
             steps {
                 script {
                     update_k8s_manifests(
-                        imageTag:       env.DOCKER_IMAGE_TAG,
-                        manifestsPath:  'kubernetes',
+                        imageTag: env.DOCKER_IMAGE_TAG,
+                        manifestsPath: 'kubernetes',
                         gitCredentials: 'github-credentials',
-                        gitUserName:    'Jenkins CI',
-                        gitUserEmail:   'mafunzoali@gmail.com'
+                        gitUserName: 'Abdoul KARENZO',
+                        gitUserEmail: 'abdoulkarenzo-max@users.noreply.github.com',
+                        gitBranch: env.GIT_BRANCH,
+                        repoUrl: env.REPO_URL
                     )
                 }
             }
         }
     }
-
+    
     post {
         always {
-            sh 'docker image prune -f'
+            script {
+                clean_ws()
+                echo "Pipeline completed at: ${new Date()}"
+            }
         }
         success {
-            echo "✅ Build ${env.DOCKER_IMAGE_TAG} pushed successfully."
+            echo "✅ Pipeline SUCCESSFUL!"
+            echo "📦 Images pushed:"
+            echo "   - ${env.DOCKER_IMAGE_NAME}:${env.DOCKER_IMAGE_TAG}"
+            echo "   - ${env.DOCKER_MIGRATION_IMAGE_NAME}:${env.DOCKER_IMAGE_TAG}"
+            echo "🔧 Kubernetes manifests updated with new image tags"
         }
         failure {
-            echo "❌ Pipeline failed. Review stage logs above."
+            echo "❌ Pipeline FAILED at stage: ${env.STAGE_NAME}"
+            echo "Check build logs for details: ${env.BUILD_URL}"
+        }
+        aborted {
+            echo "⚠️ Pipeline was aborted"
         }
     }
 }
