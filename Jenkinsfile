@@ -4,7 +4,7 @@ pipeline {
     agent any
     
     options {
-        parallelsAlwaysFailFast()  // Global failFast for ALL parallel stages
+        parallelsAlwaysFailFast()  // Global failFast for ALL parallel stages for aws resources cost optimization
         timeout(time: 1, unit: 'HOURS')  // Additional safety - max pipeline runtime
         buildDiscarder(logRotator(numToKeepStr: '10'))  // Keep last 10 builds only
     }
