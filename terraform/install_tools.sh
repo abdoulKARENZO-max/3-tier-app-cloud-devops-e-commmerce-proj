@@ -18,7 +18,14 @@ sudo systemctl enable jenkins
 # Install Docker
 sudo apt install -y docker.io
 sudo usermod -aG docker ubuntu
+
+
+# User group permission
+sudo usermod -aG docker $USER
 sudo usermod -aG docker jenkins
+
+sudo systemctl restart docker
+sudo systemctl restart jenkins
 
 # Install Trivy
 sudo apt install -y wget apt-transport-https gnupg lsb-release
