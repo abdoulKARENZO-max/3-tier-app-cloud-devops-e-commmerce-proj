@@ -10,7 +10,7 @@ sudo apt update -y
 sudo apt upgrade -y
 
 # Install Java (Jenkins requires 17 or 21)
-sudo apt install -y openjdk-21-jdk wget curl
+sudo apt install -y openjdk-25-jdk wget curl
 
 # Verify Java
 java -version
