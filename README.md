@@ -1,8 +1,3 @@
-Here's the full README content — just select all and copy:
-
----
-
-```markdown
 # 🚀 Production-Grade E-Commerce Deployment on AWS EKS
 
 A real-world DevOps project demonstrating end-to-end deployment, monitoring, and management of a cloud-native e-commerce application — solving the exact challenges DevOps engineers face in production environments.
