@@ -1,4 +1,5 @@
 
+
 # data "aws_ami" "os_image" { ... }   <- removed for Floci (no real AMI catalog behind it)
 
 resource "aws_key_pair" "deployer" {
@@ -42,7 +43,7 @@ resource "aws_security_group" "allow_user_to_connect" {
 # NOTE: aws_instance is known to crash the Terraform AWS provider on Floci
 # during read-after-create (nil pointer panic). VPC/SG/subnet apply fine.
 # If apply dies here, comment this resource out and test the rest first.
-resource "aws_instance" "testinstance" {
+/* resource "aws_instance" "testinstance" {
   ami                    = "ami-0c55b159cbfafe1f0" # any structurally valid AMI string works
   instance_type          = var.instance_type
   key_name               = aws_key_pair.deployer.key_name
@@ -51,14 +52,16 @@ resource "aws_instance" "testinstance" {
   user_data              = file("${path.module}/install_tools.sh")
   tags = {
     Name = "Jenkins-Automate"
-  }
+  } 
   root_block_device {
     volume_size = 20
     volume_type = "gp3"
   }
 }
 
+
 resource "aws_eip" "jenkins_server_ip" {
   instance = aws_instance.testinstance.id
   domain   = "vpc"
 }
+*/

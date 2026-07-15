@@ -1,7 +1,7 @@
-
 resource "aws_security_group" "node_group_remote_access" {
   name   = "allow HTTP"
   vpc_id = module.vpc.vpc_id
+
   ingress {
     description = "port 22 allow"
     from_port   = 22
@@ -9,6 +9,7 @@ resource "aws_security_group" "node_group_remote_access" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
   egress {
     description = "allow all outgoing traffic"
     from_port   = 0
@@ -28,20 +29,11 @@ module "eks" {
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
 
-  # access_entries removed for Floci — referenced a real IAM ARN in account
-  # 263476283037, which doesn't exist locally (Floci resolves your local
-  # account to 000000000000 since access_key = "floci" isn't a 12-digit AKID)
-  # access_entries = {
-  #   example = {
-  #     principal_arn = "arn:aws:iam::263476283037:user/terraform@user"
-  #     policy_associations = {
-  #       example = {
-  #         policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  #         access_scope = { type = "cluster" }
-  #       }
-  #     }
-  #   }
-  # }
+  create_node_security_group                 = false
+  node_security_group_id                      = aws_security_group.node_group_remote_access.id
+  create_cluster_primary_security_group_tags  = false # Floci doesn't populate cluster_security_group_id
+
+  enable_irsa = false # Floci doesn't populate identity.oidc.issuer
 
   cluster_security_group_additional_rules = {
     access_for_bastion_jenkins_hosts = {
@@ -54,19 +46,7 @@ module "eks" {
     }
   }
 
-  # If apply fails here, comment cluster_addons out first to isolate
-  # whether it's the cluster/node-group or addon reconciliation failing.
-  cluster_addons = {
-    coredns = {
-      most_recent = true
-    }
-    kube-proxy = {
-      most_recent = true
-    }
-    vpc-cni = {
-      most_recent = true
-    }
-  }
+  # cluster_addons removed — DescribeAddonVersions not implemented on Floci
 
   vpc_id                   = module.vpc.vpc_id
   subnet_ids               = module.vpc.private_subnets
@@ -74,26 +54,22 @@ module "eks" {
 
   eks_managed_node_group_defaults = {
     instance_types                        = ["t2.micro", "t3.micro"]
-    attach_cluster_primary_security_group = true
+    attach_cluster_primary_security_group = false
   }
 
   eks_managed_node_groups = {
     tws-demo-ng = {
-      min_size     = 1
-      max_size     = 3
-      desired_size = 1
-
-      instance_types = ["t2.micro", "t3.micro"]
-      capacity_type  = "SPOT"
-
+      min_size                   = 1
+      max_size                   = 3
+      desired_size               = 1
+      instance_types             = ["t2.micro", "t3.micro"]
+      capacity_type              = "SPOT"
       disk_size                  = 35
       use_custom_launch_template = false
-
       remote_access = {
         ec2_ssh_key               = resource.aws_key_pair.deployer.key_name
         source_security_group_ids = [aws_security_group.node_group_remote_access.id]
       }
-
       tags = {
         Name        = "tws-demo-ng"
         Environment = "dev"

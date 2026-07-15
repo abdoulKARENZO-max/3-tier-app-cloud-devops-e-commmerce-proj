@@ -1,4 +1,5 @@
 
+
 output "region" {
   description = "The AWS region where resources are created"
   value       = local.region
@@ -19,10 +20,10 @@ output "eks_cluster_endpoint" {
   value       = module.eks.cluster_endpoint
 }
 
-output "public_ip" {
+/* output "public_ip" {
   description = "Public IP of the EC2 instance"
   value       = aws_instance.testinstance.public_ip
-}
+} */
 
 output "eks_node_group_public_ips" {
   description = "Public IPs of the EKS node group instances"

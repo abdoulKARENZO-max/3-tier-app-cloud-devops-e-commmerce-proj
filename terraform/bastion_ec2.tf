@@ -1,4 +1,5 @@
 
+
 resource "aws_security_group" "allow_user_bastion" {
   name        = "bastion_host_SG"
   description = "Allow user to connect"
@@ -31,7 +32,7 @@ resource "aws_security_group" "allow_user_bastion" {
   }
 }
 
-resource "aws_instance" "bastion_host" {
+/* resource "aws_instance" "bastion_host" {
   ami                    = "ami-0c55b159cbfafe1f0" # static AMI — see note in ec2.tf
   instance_type          = var.instance_type
   key_name               = aws_key_pair.deployer.key_name
@@ -45,4 +46,4 @@ resource "aws_instance" "bastion_host" {
     volume_size = 20
     volume_type = "gp3"
   }
-}
+} */

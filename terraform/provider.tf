@@ -27,5 +27,7 @@ provider "aws" {
     s3          = "http://localhost:4566"
     elbv2       = "http://localhost:4566"
     autoscaling = "http://localhost:4566"
+    kms         = "http://localhost:4566"
+    logs        = "http://localhost:4566"
   }
 }
