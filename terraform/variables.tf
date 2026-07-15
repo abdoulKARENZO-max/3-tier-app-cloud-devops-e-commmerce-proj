@@ -1,7 +1,5 @@
-
-
 variable "aws_region" {
-  description = "AWS region where resources will be provisioned (unused — see provider.tf local.region)"
+  description = "AWS region where resources will be provisioned"
   default     = "us-east-2"
 }
 
@@ -16,6 +14,6 @@ variable "instance_type" {
 }
 
 variable "my_enviroment" {
-  description = "Environment tag"
+  description = "Instance type for the EC2 instance"
   default     = "dev"
 }

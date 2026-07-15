@@ -1,5 +1,4 @@
 
-
 resource "aws_security_group" "allow_user_bastion" {
   name        = "bastion_host_SG"
   description = "Allow user to connect"
@@ -20,7 +19,7 @@ resource "aws_security_group" "allow_user_bastion" {
   }
 
   egress {
-    description = "allow all outgoing traffic"
+    description = " allow all outgoing traffic "
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -32,8 +31,8 @@ resource "aws_security_group" "allow_user_bastion" {
   }
 }
 
-/* resource "aws_instance" "bastion_host" {
-  ami                    = "ami-0c55b159cbfafe1f0" # static AMI — see note in ec2.tf
+resource "aws_instance" "bastion_host" {
+  ami                    = data.aws_ami.os_image.id
   instance_type          = var.instance_type
   key_name               = aws_key_pair.deployer.key_name
   vpc_security_group_ids = [aws_security_group.allow_user_bastion.id]
@@ -46,4 +45,5 @@ resource "aws_security_group" "allow_user_bastion" {
     volume_size = 20
     volume_type = "gp3"
   }
-} */
+
+}

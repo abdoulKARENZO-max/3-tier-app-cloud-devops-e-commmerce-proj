@@ -1,6 +1,15 @@
-
-
-# data "aws_ami" "os_image" { ... }   <- removed for Floci (no real AMI catalog behind it)
+data "aws_ami" "os_image" {
+  owners      = ["099720109477"]
+  most_recent = true
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd-gp3/*24.04-amd64*"]
+  }
+}
 
 resource "aws_key_pair" "deployer" {
   key_name   = "terra-automate-key"
@@ -28,23 +37,21 @@ resource "aws_security_group" "allow_user_to_connect" {
   }
 
   egress {
-    description = "allow all outgoing traffic"
+    description = " allow all outgoing traffic "
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+
   tags = {
     Name = "mysecurity"
   }
 }
 
-# NOTE: aws_instance is known to crash the Terraform AWS provider on Floci
-# during read-after-create (nil pointer panic). VPC/SG/subnet apply fine.
-# If apply dies here, comment this resource out and test the rest first.
-/* resource "aws_instance" "testinstance" {
-  ami                    = "ami-0c55b159cbfafe1f0" # any structurally valid AMI string works
+resource "aws_instance" "testinstance" {
+  ami                    = data.aws_ami.os_image.id
   instance_type          = var.instance_type
   key_name               = aws_key_pair.deployer.key_name
   vpc_security_group_ids = [aws_security_group.allow_user_to_connect.id]
@@ -52,16 +59,15 @@ resource "aws_security_group" "allow_user_to_connect" {
   user_data              = file("${path.module}/install_tools.sh")
   tags = {
     Name = "Jenkins-Automate"
-  } 
+  }
   root_block_device {
     volume_size = 20
     volume_type = "gp3"
   }
-}
 
+}
 
 resource "aws_eip" "jenkins_server_ip" {
   instance = aws_instance.testinstance.id
   domain   = "vpc"
 }
-*/
